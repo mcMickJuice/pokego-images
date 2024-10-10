@@ -57,14 +57,18 @@ func main() {
 
 	fmt.Println(image.At(45, 43))
 	maxBounds := image.Bounds().Max.X
-	var slc = make([][]float32, maxBounds, maxBounds)
+	var slc = make([]string, maxBounds, maxBounds)
 
 	for r := 0; r < maxBounds; r++ {
 		for c := 0; c < maxBounds; c++ {
-			slc[r] = append(slc[r], toGrayscale(image.At(r, c)))
+			grayscale := toGrayscale(image.At(c, r))
+			ascii := grayscaleToAscii(grayscale)
+			slc[r] += ascii
 		}
 	}
-	fmt.Println(slc)
+	for _, line := range slc {
+		fmt.Println(line)
+	}
 }
 
 const R_FACTOR float32 = 0.299
@@ -81,10 +85,10 @@ const MAX = 65535
 
 // 256*256 - 1 - 0 - 65535
 func grayscaleToAscii(brightness float32) string {
-	asciiLen := len(ASCII) -1
+	asciiLen := len(ASCII) - 1
 	unit := MAX / asciiLen
 	inverted := MAX - brightness
-  // my god...
+	// my god...
 	index := inverted / float32(unit)
 	indexFloor := math.Floor(float64(index)) // no index out of range!
 	return string(ASCII[int64(indexFloor)])
