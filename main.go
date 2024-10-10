@@ -39,8 +39,8 @@ const ALL_POKEMON_URL = "https://pokeapi.co/api/v2/pokemon?limit=400"
 const POKEMON_DETAIL_URL = "https://pokeapi.co/api/v2/pokemon/%s"
 
 func main() {
-  pokemonPtr := flag.String("pokemon", "snorlax", "give a pokemon")
-  flag.Parse()
+	pokemonPtr := flag.String("pokemon", "snorlax", "give a pokemon")
+	flag.Parse()
 	resp, err := http.Get(fmt.Sprintf(POKEMON_DETAIL_URL, *pokemonPtr))
 	panicIfErr(err)
 
@@ -82,16 +82,16 @@ func toGrayscale(color color.Color) float32 {
 	return float32(r)*R_FACTOR + float32(g)*G_FACTOR + float32(b)*B_FACTOR
 }
 
-const ASCII = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. "
+const ASCII = " `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@"
+
 const MAX = 65535
 
 // 256*256 - 1 - 0 - 65535
 func grayscaleToAscii(brightness float32) string {
 	asciiLen := len(ASCII) - 1
 	unit := MAX / asciiLen
-	inverted := MAX - brightness
 	// my god...
-	index := inverted / float32(unit)
+	index := brightness / float32(unit)
 	indexFloor := math.Floor(float64(index)) // no index out of range!
 	return string(ASCII[int64(indexFloor)])
 }
