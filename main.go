@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"image/color"
 	"image/png"
@@ -38,8 +39,9 @@ const ALL_POKEMON_URL = "https://pokeapi.co/api/v2/pokemon?limit=400"
 const POKEMON_DETAIL_URL = "https://pokeapi.co/api/v2/pokemon/%s"
 
 func main() {
-	pokemonName := "snorlax"
-	resp, err := http.Get(fmt.Sprintf(POKEMON_DETAIL_URL, pokemonName))
+  pokemonPtr := flag.String("pokemon", "snorlax", "give a pokemon")
+  flag.Parse()
+	resp, err := http.Get(fmt.Sprintf(POKEMON_DETAIL_URL, *pokemonPtr))
 	panicIfErr(err)
 
 	defer resp.Body.Close()
