@@ -1,0 +1,5 @@
+# ignore binaries emitted by go, which have no extensions
+*
+
+# unignore anything with extensions
+!*.*
