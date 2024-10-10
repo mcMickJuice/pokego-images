@@ -3,9 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
+	"image/color"
+	"image/png"
+	"math"
 	"net/http"
-	"os"
 )
 
 type PokemonResponse struct {
@@ -51,13 +52,40 @@ func main() {
 	defer resp.Body.Close()
 
 	// read contents of image response
-	fileName := fmt.Sprintf("./images/%s.jpg", pokemonName)
-	file, fileErr := os.Create(fileName)
-	panicIfErr(fileErr)
+	image, imageErr := png.Decode(resp.Body)
+	panicIfErr(imageErr)
 
-	defer file.Close()
+	fmt.Println(image.At(45, 43))
+	maxBounds := image.Bounds().Max.X
+	var slc = make([][]float32, maxBounds, maxBounds)
 
-	_, err = io.Copy(file, resp.Body)
-	panicIfErr(err)
-	fmt.Printf("image saved to %s", fileName)
+	for r := 0; r < maxBounds; r++ {
+		for c := 0; c < maxBounds; c++ {
+			slc[r] = append(slc[r], toGrayscale(image.At(r, c)))
+		}
+	}
+	fmt.Println(slc)
+}
+
+const R_FACTOR float32 = 0.299
+const G_FACTOR float32 = 0.587
+const B_FACTOR float32 = 0.114
+
+func toGrayscale(color color.Color) float32 {
+	r, g, b, _ := color.RGBA()
+	return float32(r)*R_FACTOR + float32(g)*G_FACTOR + float32(b)*B_FACTOR
+}
+
+const ASCII = "$@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. "
+const MAX = 65535
+
+// 256*256 - 1 - 0 - 65535
+func grayscaleToAscii(brightness float32) string {
+	asciiLen := len(ASCII) -1
+	unit := MAX / asciiLen
+	inverted := MAX - brightness
+  // my god...
+	index := inverted / float32(unit)
+	indexFloor := math.Floor(float64(index)) // no index out of range!
+	return string(ASCII[int64(indexFloor)])
 }
