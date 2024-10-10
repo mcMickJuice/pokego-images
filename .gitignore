@@ -3,3 +3,6 @@
 
 # unignore anything with extensions
 !*.*
+
+#ignore downloaded images dir
+images/
