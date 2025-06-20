@@ -17,7 +17,9 @@ type PokemonResponse struct {
 }
 
 type PokemonSpritesResponse struct {
-	Default string `json:"front_default"`
+	Default     string `json:"front_default"`
+	BackDefault string `json:"back_default"`
+	FrontShiny  string `json:"front_shiny"`
 }
 
 type AllPokemonsResponse struct {
