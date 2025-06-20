@@ -63,7 +63,7 @@ func main() {
 
 	fmt.Println(image.At(45, 43))
 	maxBounds := image.Bounds().Max.X
-	var slc = make([]string, maxBounds, maxBounds)
+	var slc = make([]string, maxBounds)
 
 	for r := 0; r < maxBounds; r++ {
 		for c := 0; c < maxBounds; c++ {
