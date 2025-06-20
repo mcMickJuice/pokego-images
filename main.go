@@ -71,7 +71,10 @@ func main() {
 		}
 	}
 	for _, line := range slc {
-		fmt.Println(line)
+		if !blankLine(line) {
+
+			fmt.Println(line)
+		}
 	}
 }
 
@@ -84,13 +87,16 @@ func toGrayscale(color color.Color) float32 {
 	return float32(r)*R_FACTOR + float32(g)*G_FACTOR + float32(b)*B_FACTOR
 }
 
-// filter out empty columns and spaces
-// func blankLine(line []string ) bool {
-//   for char := range line {
-// if()
-//   }
-// return true
-// }
+func blankLine(line string) bool {
+	isBlankLine := true
+	for _, char := range line {
+		if char != 32 {
+			isBlankLine = false
+			break
+		}
+	}
+	return isBlankLine
+}
 
 const ASCII = " `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@"
 
