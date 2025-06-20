@@ -47,7 +47,9 @@ func main() {
 	defer resp.Body.Close()
 	var pokemonResponse PokemonResponse
 	dec := json.NewDecoder(resp.Body)
-	dec.Decode(&pokemonResponse)
+	if err := dec.Decode(&pokemonResponse); err != nil {
+		panicIfErr(err)
+	}
 
 	resp, err = http.Get(pokemonResponse.Sprites.Default)
 	panicIfErr(err)
