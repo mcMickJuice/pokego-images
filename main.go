@@ -61,7 +61,6 @@ func main() {
 	image, imageErr := png.Decode(resp.Body)
 	panicIfErr(imageErr)
 
-	fmt.Println(image.At(45, 43))
 	maxBounds := image.Bounds().Max.X
 	var slc = make([]string, maxBounds)
 
