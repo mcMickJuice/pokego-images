@@ -1,8 +1,8 @@
 # ignore binaries emitted by go, which have no extensions
-*
+pokego
 
 # unignore anything with extensions
-!*.*
+# !*.*
 
 #ignore downloaded images dir
 images/
