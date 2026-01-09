@@ -58,7 +58,12 @@ func getPokemon(pokemonName string) (pokemonResponse, error) {
 		return pokemonResponse{}, err
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Printf("failed to close response body: %v", err)
+		}
+	}()
 	des := json.NewDecoder(resp.Body)
 
 	var pokemonResp pokemonResponse
@@ -76,7 +81,13 @@ func getPokemonSprite(pokemonSprintUrl string) (image.Image, error) {
 		return nil, err
 	}
 
-	defer resp.Body.Close()
+	defer func() {
+		err := resp.Body.Close()
+		if err != nil {
+			fmt.Printf("failed to close response body: %v", err)
+		}
+	}()
+
 	img, err := png.Decode(resp.Body)
 	if err != nil {
 		// wrap this to be specific that image decoding failed
