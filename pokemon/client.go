@@ -11,25 +11,16 @@ import (
 const ALL_POKEMON_URL = "https://pokeapi.co/api/v2/pokemon?limit=400"
 const POKEMON_DETAIL_URL = "https://pokeapi.co/api/v2/pokemon/%s"
 
-type PokemonResponse struct {
+type pokemonResponse struct {
 	Name    string                 `json:"name"`
 	Id      int                    `json:"id"`
-	Sprites PokemonSpritesResponse `json:"sprites"`
+	Sprites pokemonSpritesResponse `json:"sprites"`
 }
 
-type PokemonSpritesResponse struct {
+type pokemonSpritesResponse struct {
 	Default     string `json:"front_default"`
 	BackDefault string `json:"back_default"`
 	FrontShiny  string `json:"front_shiny"`
-}
-
-type AllPokemonsResponse struct {
-	Results []AllPokemonResponse `json:"results"`
-}
-
-type AllPokemonResponse struct {
-	Name string `json:"name"`
-	Url  string `json:"url"`
 }
 
 type PokemonClient struct {
@@ -45,37 +36,37 @@ func NewPokemonClient(pokemonName string) *PokemonClient {
 
 func (pc PokemonClient) GetPokemonSprite() (image.Image, error) {
 
-	pokemonResponse, err := getPokemon(pc.pokemonName)
+	pokeResp, err := getPokemon(pc.pokemonName)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get pokemon details: %w", err)
 	}
 
-	pokemonSprite, err := getPokemonSprite(pokemonResponse.Sprites.Default)
+	pokeSpriteResp, err := getPokemonSprite(pokeResp.Sprites.Default)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get pokemon sprite: %w", err)
 	}
 
-	return pokemonSprite, nil
+	return pokeSpriteResp, nil
 }
 
-func getPokemon(pokemonName string) (PokemonResponse, error) {
+func getPokemon(pokemonName string) (pokemonResponse, error) {
 	resp, err := http.Get(fmt.Sprintf(POKEMON_DETAIL_URL, pokemonName))
 
 	if err != nil {
-		return PokemonResponse{}, err
+		return pokemonResponse{}, err
 	}
 
 	defer resp.Body.Close()
 	des := json.NewDecoder(resp.Body)
 
-	var pokemonResponse PokemonResponse
-	if err := des.Decode(&pokemonResponse); err != nil {
-		return PokemonResponse{}, err
+	var pokemonResp pokemonResponse
+	if err := des.Decode(&pokemonResp); err != nil {
+		return pokemonResponse{}, err
 	}
 
-	return pokemonResponse, nil
+	return pokemonResp, nil
 }
 
 func getPokemonSprite(pokemonSprintUrl string) (image.Image, error) {
