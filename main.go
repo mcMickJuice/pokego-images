@@ -6,6 +6,10 @@ import (
 	"mcmickjuice/pokego/pokemon"
 )
 
+// TODO implement multiple apps/clients:
+// cli
+// webserver - webserver could contain a redis cache to speed up pokemon fetch
+
 func main() {
 	pokemonPtr := flag.String("pokemon", "snorlax", "give a pokemon")
 	flag.Parse()
