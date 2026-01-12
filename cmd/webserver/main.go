@@ -1,14 +1,14 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"mcmickjuice/pokego/internal/webserver"
 )
 
 func main() {
-	fmt.Println("starting webserver")
-	if err := webserver.CreateWebserver(); err != nil {
+	addr := ":8000"
+	webserver := webserver.NewPokemonWebserver(addr)
+	if err := webserver.Start(); err != nil {
 		log.Fatalf("error starting webserver: %v", err)
 	}
 }

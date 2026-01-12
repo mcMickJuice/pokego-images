@@ -8,7 +8,16 @@ import (
 	"net/http"
 )
 
-func CreateWebserver() error {
+type PokemonWebServer struct {
+	addr string
+}
+
+func NewPokemonWebserver(addr string) PokemonWebServer {
+	return PokemonWebServer{addr}
+
+}
+
+func (s PokemonWebServer) Start() error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/pokemon/{pokemon}", func(w http.ResponseWriter, r *http.Request) {
 		param := r.PathValue("pokemon")
@@ -34,7 +43,8 @@ func CreateWebserver() error {
 		}
 	})
 
-	err := http.ListenAndServe("localhost:8080", mux)
+	fmt.Printf("webserver started at %s\n", s.addr)
+	err := http.ListenAndServe(s.addr, mux)
 	if err != nil {
 		return err
 	}
