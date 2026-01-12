@@ -1,6 +1,8 @@
 package webserver
 
 import (
+	"errors"
+	"fmt"
 	"mcmickjuice/pokego/internal/pokeimage"
 	"mcmickjuice/pokego/internal/pokemon"
 	"net/http"
@@ -15,9 +17,13 @@ func CreateWebserver() error {
 		image, err := pokemonClient.GetPokemonSprite()
 
 		if err != nil {
-			// unwrap to see if not found or not? maybe return sentinal error here
-			w.WriteHeader(http.StatusNotFound)
-			_, _ = w.Write([]byte("Bad request"))
+			if errors.Is(err, pokemon.ErrPokemonNotFound) {
+				w.WriteHeader(http.StatusNotFound)
+				_, _ = fmt.Fprintf(w, "Pokemon %s Not Found", param)
+				return
+			}
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = fmt.Fprint(w, "Unknown error")
 			return
 		}
 
