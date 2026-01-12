@@ -86,12 +86,7 @@ func getPokemonSprite(pokemonSpriteURL string) (image.Image, error) {
 		return nil, err
 	}
 
-	defer func() {
-		err := resp.Body.Close()
-		if err != nil {
-			fmt.Printf("failed to close response body: %v", err)
-		}
-	}()
+	defer resp.Body.Close()
 
 	img, err := png.Decode(resp.Body)
 	if err != nil {
