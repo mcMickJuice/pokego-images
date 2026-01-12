@@ -59,6 +59,7 @@ func getPokemon(pokemonName string) (pokemonResponse, error) {
 	if err != nil {
 		return pokemonResponse{}, fmt.Errorf("unknown error fetching pokemon: %w", err)
 	}
+	defer resp.Body.Close()
 
 	if resp.StatusCode == http.StatusNotFound {
 		return pokemonResponse{}, ErrPokemonNotFound
@@ -68,7 +69,6 @@ func getPokemon(pokemonName string) (pokemonResponse, error) {
 		return pokemonResponse{}, fmt.Errorf("failed to fetch pokemon: status code %v", resp.StatusCode)
 	}
 
-	defer resp.Body.Close()
 	des := json.NewDecoder(resp.Body)
 
 	var pokemonResp pokemonResponse
