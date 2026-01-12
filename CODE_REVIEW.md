@@ -1,136 +1,136 @@
-# Code Review: pokego-images
+# Code Review: pokego-images (Updated)
 
 **Reviewer**: Senior Engineer
 **Date**: January 12, 2026
 **Branch**: `mj/separate-executables`
+**Revision**: 2 (post-fixes)
 
 ---
 
-## Executive Summary
+## Summary of Changes Since Last Review
 
-This is a well-organized Go project that fetches Pokemon sprites from the PokeAPI and converts them to ASCII art. The code is generally clean and demonstrates good instincts around project structure. There are several areas where adopting more idiomatic Go patterns would improve maintainability, testability, and robustness.
+You addressed several key issues:
 
-**Overall Assessment**: Solid foundation with room for improvement in error handling, interface design, and Go conventions.
+- ✅ Replaced `panic` with `log.Fatalf` in CLI
+- ✅ Fixed critical bug: error check now comes before using `resp` in `getPokemon()`
+- ✅ Constants renamed to Go conventions (`rFactor`, `gFactor`, etc.)
+- ✅ Magic number `32` replaced with named constant `asciiSpaceCharCode`
+- ✅ Removed unused `ALL_POKEMON_URL` constant
+- ✅ `PokemonImage.Write()` now returns an error
+- ✅ Removed unnecessary blank line in `NewPokemonClient`
+- ✅ Webserver handler now checks error from `Write()`
 
----
-
-## Project Structure
-
-### What's Good
-
-Your project layout follows the widely-adopted [Standard Go Project Layout](https://github.com/golang-standards/project-layout):
-
-```
-.
-├── cmd/
-│   ├── cli/main.go
-│   └── webserver/main.go
-├── internal/
-│   ├── pokeimage/
-│   ├── pokemon/
-│   └── webserver/
-├── go.mod
-└── .gitignore
-```
-
-- **`cmd/`** for executables is correct
-- **`internal/`** prevents external packages from importing your code, which is appropriate here
-- Separation of concerns between `pokemon` (API client), `pokeimage` (image processing), and `webserver` is logical
-
-### Suggestions
-
-1. **Consider a `pkg/` directory** if you ever want to expose packages for external use. Right now everything is in `internal/`, which is fine for a self-contained application.
-
-2. **Add a `Makefile` or `justfile`** for common operations:
-   ```makefile
-   build:
-       go build -o bin/cli ./cmd/cli
-       go build -o bin/webserver ./cmd/webserver
-   ```
+Good work on these fixes. Below are the remaining issues.
 
 ---
 
-## Error Handling
+## Remaining Issues
 
-This is the area with the most room for improvement. Go has specific idioms around error handling that differ from exception-based languages.
-
-### Issue 1: Checking error *after* using response (`client.go:56-69`)
+### Issue 1: Resource leak - defer placement (`client.go:63-71`)
 
 ```go
 func getPokemon(pokemonName string) (pokemonResponse, error) {
-    resp, err := http.Get(fmt.Sprintf(POKEMON_DETAIL_URL, pokemonName))
+    resp, err := http.Get(fmt.Sprintf(pokemonDetailURL, pokemonName))
 
-    if resp.StatusCode == http.StatusNotFound {  // Using resp before checking err!
-        return pokemonResponse{}, ErrPokemonNotFound
-    }
-    // ...
-    if err != nil {  // Too late - we already used resp above
+    if err != nil {
         return pokemonResponse{}, fmt.Errorf("unknown error fetching pokemon: %w", err)
     }
+
+    if resp.StatusCode == http.StatusNotFound {
+        return pokemonResponse{}, ErrPokemonNotFound  // Body not closed!
+    }
+
+    if resp.StatusCode != http.StatusOK {
+        return pokemonResponse{}, fmt.Errorf(...)  // Body not closed!
+    }
+
+    defer resp.Body.Close()  // Too late - early returns above leak the body
 ```
 
-**Why this matters**: If `http.Get` returns an error, `resp` may be `nil`, causing a panic when you access `resp.StatusCode`. The error check must come first.
+**Why this matters**: If the API returns a 404 or any non-200 status, you return early *without* closing the response body. This leaks file descriptors and can cause resource exhaustion under load.
 
-**Idiomatic pattern**:
+**Fix**: Move the `defer` immediately after the error check:
 ```go
-resp, err := http.Get(url)
 if err != nil {
-    return pokemonResponse{}, fmt.Errorf("failed to fetch pokemon: %w", err)
+    return pokemonResponse{}, fmt.Errorf("unknown error fetching pokemon: %w", err)
 }
-defer resp.Body.Close()
+defer resp.Body.Close()  // Right here, before any other returns
 
 if resp.StatusCode == http.StatusNotFound {
     return pokemonResponse{}, ErrPokemonNotFound
 }
 ```
 
-### Issue 2: Using `panic` in CLI (`cmd/cli/main.go:17`)
+---
+
+### Issue 2: CLI ignores Write error (`cmd/cli/main.go:21`)
 
 ```go
-if err != nil {
-    panic(err)
+pokeimage.NewPokemonImage(image).Write(os.Stdout)
+```
+
+**Why this matters**: You updated `Write()` to return an error (good!), but the CLI doesn't check it. If writing to stdout fails (broken pipe, disk full, etc.), the error is silently ignored.
+
+**Fix**:
+```go
+if err := pokeimage.NewPokemonImage(image).Write(os.Stdout); err != nil {
+    log.Fatalf("Failed to write image: %v", err)
 }
 ```
 
-**Why this matters**: `panic` is reserved for truly unrecoverable situations (programmer errors, invariant violations). User input errors are expected and should be handled gracefully.
+---
 
-**Idiomatic pattern**:
+### Issue 3: Typo in parameter name (`client.go:82`)
+
 ```go
-if err != nil {
-    fmt.Fprintf(os.Stderr, "error: %v\n", err)
-    os.Exit(1)
-}
+func getPokemonSprite(pokemonSprintUrl string) (image.Image, error) {
+                            ^^^^^
 ```
 
-Or use `log.Fatal(err)` which does both.
+`Sprint` should be `Sprite`, and `Url` should be `URL` per Go conventions for initialisms.
 
-### Issue 3: Silent error handling (`pokeimage/image.go:74-78`)
+**Fix**: `pokemonSpriteURL`
+
+---
+
+### Issue 4: Webserver main.go logging issues (`cmd/webserver/main.go:9-14`)
 
 ```go
-_, err := w.Write(line)
+fmt.Println("starting webserver")
+err := webserver.CreateWebserver()
 if err != nil {
-    fmt.Printf("error writing to writer: %v", err)
-    return  // Silently returns, caller doesn't know there was an error
+    fmt.Printf("error starting webserver: %v", err)  // No newline, goes to stdout
 }
+fmt.Println("exiting webserver")  // Prints even on error
 ```
 
-**Why this matters**: The `Write` method signature is `func (pi PokemonImage) Write(w io.Writer)` - it returns nothing. The caller has no way to know if writing failed. This violates the Go principle of explicit error handling.
+**Issues**:
+1. Error message missing newline
+2. Error goes to stdout instead of stderr
+3. "exiting webserver" prints even when there's an error (misleading)
 
-**Idiomatic pattern**: Return the error and let the caller decide:
+**Fix**:
 ```go
-func (pi PokemonImage) Write(w io.Writer) error {
-    // ...
-    if _, err := w.Write(line); err != nil {
-        return fmt.Errorf("failed to write line: %w", err)
+func main() {
+    log.Println("starting webserver on localhost:8080")
+    if err := webserver.CreateWebserver(); err != nil {
+        log.Fatalf("webserver error: %v", err)
     }
-    // ...
-    return nil
 }
 ```
 
-### Issue 4: Inconsistent defer pattern for `resp.Body.Close()`
+Note: `log.Fatalf` prints to stderr and exits with code 1, so nothing after it runs.
 
-You have this pattern repeated:
+---
+
+### Issue 5: Inconsistent defer patterns (`client.go:71` vs `client.go:89-94`)
+
+In `getPokemon`:
+```go
+defer resp.Body.Close()
+```
+
+In `getPokemonSprite`:
 ```go
 defer func() {
     err := resp.Body.Close()
@@ -140,222 +140,13 @@ defer func() {
 }()
 ```
 
-**Why this matters**: While checking `Close()` errors is thorough, for HTTP response bodies it's typically overkill since you've already read the data. The standard pattern is simply:
-```go
-defer resp.Body.Close()
-```
+**Why this matters**: Inconsistency makes code harder to maintain. Pick one pattern and stick with it.
 
-If you do want to handle the error (which can matter for writable file handles), use `errcheck` linter or a helper function rather than inline anonymous functions.
+**Recommendation**: Use the simple `defer resp.Body.Close()` in both places. For HTTP response bodies, the Close error is almost never actionable - the data has already been read. The verbose pattern adds noise without benefit.
 
 ---
 
-## Code Style & Idiomatic Go
-
-### Issue 5: Constant naming (`pokeimage/image.go:22-24`, `client.go:11-12`)
-
-```go
-const R_FACTOR float32 = 0.299
-const ALL_POKEMON_URL = "https://pokeapi.co/api/v2/pokemon?limit=400"
-```
-
-**Why this matters**: Go uses `MixedCaps` or `mixedCaps`, not `SCREAMING_SNAKE_CASE`. The latter is from C/Java traditions. In Go, the case of the first letter determines visibility (exported vs unexported).
-
-**Idiomatic pattern**:
-```go
-const (
-    rFactor float32 = 0.299  // unexported
-    gFactor float32 = 0.587
-    bFactor float32 = 0.114
-)
-
-const (
-    allPokemonURL   = "https://pokeapi.co/api/v2/pokemon?limit=400"
-    pokemonDetailURL = "https://pokeapi.co/api/v2/pokemon/%s"
-)
-```
-
-Note: `URL` not `Url` per Go conventions for initialisms.
-
-### Issue 6: Unnecessary blank lines in functions
-
-```go
-func NewPokemonClient(pokemonName string) *PokemonClient {
-
-    return &PokemonClient{
-```
-
-**Why this matters**: Go style (enforced by `gofmt`) doesn't use blank lines at the start of function bodies. Run `gofmt -w .` to auto-fix these.
-
-### Issue 7: Magic numbers (`pokeimage/image.go:35`)
-
-```go
-if char != 32 {
-```
-
-**Why this matters**: What is 32? (It's ASCII space.) Magic numbers make code harder to understand.
-
-**Idiomatic pattern**:
-```go
-if char != ' ' {  // Can compare byte to rune literal
-```
-
-### Issue 8: Receiver naming (`client.go:39`)
-
-```go
-func (pc PokemonClient) GetPokemonSprite() (image.Image, error) {
-```
-
-**Why this matters**: Go convention is single-letter or very short receiver names. Multi-letter abbreviations are fine for clarity but should be consistent.
-
-**Idiomatic pattern**: Either `p` for pokemon or `c` for client, used consistently:
-```go
-func (c PokemonClient) GetPokemonSprite() (image.Image, error) {
-```
-
-### Issue 9: Typo in function name (`client.go:87`)
-
-```go
-func getPokemonSprite(pokemonSprintUrl string) (image.Image, error) {
-                            ^^^^^^
-```
-
-`Sprint` should be `Sprite`. Also `Url` should be `URL` per Go conventions.
-
----
-
-## Design & Architecture
-
-### Issue 10: `PokemonClient` design
-
-The current design creates a client per Pokemon:
-```go
-pokemonClient := pokemon.NewPokemonClient("snorlax")
-image, err := pokemonClient.GetPokemonSprite()
-```
-
-**Why this matters**: This is unusual. A "client" typically represents a connection or configuration that can be reused. Creating a new client per request adds conceptual overhead.
-
-**Alternative 1** - Stateless function:
-```go
-image, err := pokemon.GetSprite("snorlax")
-```
-
-**Alternative 2** - Reusable client with method parameter:
-```go
-client := pokemon.NewClient()  // Could configure timeout, base URL, etc.
-image, err := client.GetSprite("snorlax")
-```
-
-Alternative 2 is better for testability (you can inject a mock client) and extensibility (add caching, rate limiting, etc.).
-
-### Issue 11: Hardcoded server address (`webserver/handler.go:36`)
-
-```go
-err := http.ListenAndServe("localhost:8080", mux)
-```
-
-**Why this matters**: Configuration should be injectable for flexibility and testing.
-
-**Idiomatic pattern**:
-```go
-func CreateWebserver(addr string) error {
-    // ...
-    return http.ListenAndServe(addr, mux)
-}
-```
-
-Or accept a config struct for multiple settings.
-
-### Issue 12: Square image assumption (`pokeimage/image.go:57-62`)
-
-```go
-maxBounds := pi.Bounds().Max.X
-for r := 0; r < maxBounds; r++ {
-    for c := 0; c < maxBounds; c++ {
-```
-
-**Why this matters**: You use `Max.X` for both dimensions, assuming the image is square. This works for Pokemon sprites but would break for rectangular images.
-
-**Safer pattern**:
-```go
-bounds := pi.Bounds()
-for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-    for x := bounds.Min.X; x < bounds.Max.X; x++ {
-```
-
----
-
-## Testing
-
-### Issue 13: No tests
-
-**Why this matters**: Go has excellent built-in testing. Tests are expected in Go projects and live alongside the code as `*_test.go` files.
-
-**Recommendation**: Add at minimum:
-- `internal/pokemon/client_test.go` - Test error handling paths
-- `internal/pokeimage/image_test.go` - Test ASCII conversion with known inputs
-
-Example test structure:
-```go
-// image_test.go
-package pokeimage
-
-import "testing"
-
-func TestGrayscaleToAscii(t *testing.T) {
-    tests := []struct {
-        brightness float32
-        want       byte
-    }{
-        {0, ' '},
-        {65535, '@'},
-    }
-    for _, tt := range tests {
-        got := grayscaleToAscii(tt.brightness)
-        if got != tt.want {
-            t.Errorf("grayscaleToAscii(%v) = %v, want %v", tt.brightness, got, tt.want)
-        }
-    }
-}
-```
-
----
-
-## Minor Issues
-
-### Issue 14: Unused constant (`client.go:11`)
-
-```go
-const ALL_POKEMON_URL = "https://pokeapi.co/api/v2/pokemon?limit=400"
-```
-
-This constant is defined but never used. Remove dead code.
-
-### Issue 15: Webserver logging (`cmd/webserver/main.go:9-14`)
-
-```go
-fmt.Println("starting webserver")
-err := webserver.CreateWebserver()
-if err != nil {
-    fmt.Printf("error starting webserver: %v", err)
-}
-fmt.Println("exiting webserver")
-```
-
-**Issues**:
-- `fmt.Printf` for errors should go to `os.Stderr`
-- "exiting webserver" will print even on error
-- Missing newline in error message
-
-**Better**:
-```go
-log.Println("starting webserver on :8080")
-if err := webserver.CreateWebserver(":8080"); err != nil {
-    log.Fatalf("webserver error: %v", err)
-}
-```
-
-### Issue 16: Comment typo (`pokeimage/image.go:72`)
+### Issue 6: Comment typo (`pokeimage/image.go:73`)
 
 ```go
 // append newline here instead of above soas not to break blaneLine logic
@@ -366,52 +157,127 @@ if err := webserver.CreateWebserver(":8080"); err != nil {
 
 ---
 
-## Security Considerations
+### Issue 7: Hardcoded server address (`webserver/handler.go:37`)
 
-### Issue 17: No input validation on Pokemon name
-
-The Pokemon name from user input (CLI flag or URL path) is passed directly to the API URL:
 ```go
-resp, err := http.Get(fmt.Sprintf(POKEMON_DETAIL_URL, pokemonName))
+err := http.ListenAndServe("localhost:8080", mux)
 ```
 
-While PokeAPI is trusted and Go's HTTP client handles URL encoding, it's good practice to validate/sanitize input. A malicious actor could potentially craft inputs that cause unexpected behavior.
+**Why this matters**: Hardcoded configuration makes the code inflexible. You can't run on a different port without changing source code.
 
-**Recommendation**: At minimum, validate the Pokemon name matches expected patterns (alphanumeric, hyphens for names like "mr-mime").
+**Fix**: Accept the address as a parameter:
+```go
+func CreateWebserver(addr string) error {
+    // ...
+    return http.ListenAndServe(addr, mux)
+}
+```
+
+Then in main:
+```go
+webserver.CreateWebserver(":8080")
+```
+
+Or read from environment variable / flag for production flexibility.
 
 ---
 
-## Summary of Action Items
+### Issue 8: Square image assumption (`pokeimage/image.go:58-63`)
 
-### Critical (Fix Now)
-1. Check `err` before using `resp` in `getPokemon()`
+```go
+maxBounds := pi.Bounds().Max.X
+for r := 0; r < maxBounds; r++ {
+    for c := 0; c < maxBounds; c++ {
+```
+
+**Why this matters**: Uses `Max.X` for both width and height. Works for square Pokemon sprites but breaks for rectangular images.
+
+**Safer pattern**:
+```go
+bounds := pi.Bounds()
+for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
+    for x := bounds.Min.X; x < bounds.Max.X; x++ {
+        grayscale := toGrayscale(pi.At(x, y))
+```
+
+Note: Using `Min.X`/`Min.Y` as start points is important because some image formats have non-zero origins.
+
+---
+
+### Issue 9: No tests
+
+Still no `*_test.go` files in the project.
+
+**Recommendation**: Start with testing pure functions that are easy to verify:
+
+```go
+// internal/pokeimage/image_test.go
+package pokeimage
+
+import (
+    "bytes"
+    "image"
+    "image/color"
+    "testing"
+)
+
+func TestBlankLine(t *testing.T) {
+    tests := []struct {
+        name  string
+        input []byte
+        want  bool
+    }{
+        {"all spaces", []byte("        "), true},
+        {"has content", []byte("  @  "), false},
+        {"empty", []byte{}, true},
+    }
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            if got := blankLine(tt.input); got != tt.want {
+                t.Errorf("blankLine(%q) = %v, want %v", tt.input, got, tt.want)
+            }
+        })
+    }
+}
+
+func TestGrayscaleToAscii(t *testing.T) {
+    // Test boundary conditions
+    if got := grayscaleToAscii(0); got != ' ' {
+        t.Errorf("grayscaleToAscii(0) = %q, want ' '", got)
+    }
+}
+```
+
+Run with: `go test ./...`
+
+---
+
+## Summary of Remaining Action Items
 
 ### High Priority
-2. Return errors from `PokemonImage.Write()` instead of printing
-3. Replace `panic(err)` with graceful error handling in CLI
-4. Add basic tests
+1. **Fix resource leak**: Move `defer resp.Body.Close()` before status code checks
+2. **Handle Write error in CLI**: Check and handle the error from `Write()`
 
 ### Medium Priority
-5. Fix constant naming to Go conventions
-6. Fix typo `SprintUrl` -> `SpriteURL`
-7. Remove unused `ALL_POKEMON_URL` constant
-8. Make server address configurable
+3. Fix typo: `pokemonSprintUrl` → `pokemonSpriteURL`
+4. Fix webserver logging (use `log.Fatalf`, remove "exiting" message)
+5. Make defer pattern consistent across both HTTP functions
 
-### Low Priority (Nice to Have)
-9. Add Makefile for builds
-10. Use proper logging instead of fmt.Print for webserver
-11. Consider redesigning PokemonClient to be reusable
-12. Handle non-square images in ASCII conversion
-
----
-
-## Resources for Learning Idiomatic Go
-
-- [Effective Go](https://go.dev/doc/effective_go) - Official style guide
-- [Go Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments) - Common review feedback
-- [Go Proverbs](https://go-proverbs.github.io/) - Philosophy of Go
-- [Uber Go Style Guide](https://github.com/uber-go/guide/blob/master/style.md) - Practical conventions
+### Low Priority
+6. Fix comment typo "soas" → "so as"
+7. Make server address configurable
+8. Handle non-square images
+9. Add tests
 
 ---
 
-Good work getting this far. The code does what it's supposed to do, and you've made smart choices about project organization. The issues above are the kind of things that come with experience in the language. Keep building.
+## Progress
+
+| Category | Original Issues | Fixed | Remaining |
+|----------|----------------|-------|-----------|
+| Critical | 1 | 1 | 0 |
+| High Priority | 3 | 2 | 2 |
+| Medium Priority | 4 | 2 | 3 |
+| Low Priority | 5 | 1 | 4 |
+
+You're making good progress. The critical nil-pointer bug is fixed, which was the most important item. The remaining high-priority issues (resource leak and unhandled error) are worth addressing before merging.
