@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"log"
 	"mcmickjuice/pokego/internal/pokeimage"
 	"mcmickjuice/pokego/internal/pokemon"
 	"os"
@@ -14,7 +15,7 @@ func main() {
 	image, err := pokemonClient.GetPokemonSprite()
 
 	if err != nil {
-		panic(err)
+		log.Fatalf("There was an error: %v", err)
 	}
 
 	pokeimage.NewPokemonImage(image).Write(os.Stdout)
