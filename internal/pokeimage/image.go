@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"image"
 	"image/color"
+	"io"
 	"math"
 )
 
@@ -49,6 +50,31 @@ func grayscaleToAscii(brightness float32) string {
 	index := brightness / float32(unit)
 	indexFloor := math.Floor(float64(index)) // no index out of range!
 	return string(ASCII[int64(indexFloor)])
+}
+
+func (pi PokemonImage) Write(w io.Writer) {
+	maxBounds := pi.Bounds().Max.X
+	var slc = make([]string, maxBounds)
+
+	for r := 0; r < maxBounds; r++ {
+		for c := 0; c < maxBounds; c++ {
+			grayscale := toGrayscale(pi.At(c, r))
+			ascii := grayscaleToAscii(grayscale)
+			slc[r] += ascii
+		}
+	}
+
+	// use bytes
+	for _, line := range slc {
+		if !blankLine(line) {
+			_, err := w.Write([]byte(line))
+			if err != nil {
+				fmt.Printf("error writing to writer: %v", err)
+				return
+			}
+		}
+	}
+
 }
 
 // use Reader interface

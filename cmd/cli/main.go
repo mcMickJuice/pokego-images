@@ -2,13 +2,18 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"mcmickjuice/pokego/internal/pokeimage"
 	"mcmickjuice/pokego/internal/pokemon"
 )
 
-// TODO implement multiple apps/clients:
-// cli
-// webserver - webserver could contain a redis cache to speed up pokemon fetch
+type PrintWriter struct {
+}
+
+func (p PrintWriter) Write(input []byte) (int, error) {
+	fmt.Println(string(input))
+	return 0, nil
+}
 
 func main() {
 	pokemonPtr := flag.String("pokemon", "snorlax", "give a pokemon")
@@ -20,6 +25,6 @@ func main() {
 		panic(err)
 	}
 
-	pokeimage.NewPokemonImage(image).PrintAsciiArt()
+	pokeimage.NewPokemonImage(image).Write(PrintWriter{})
 
 }
