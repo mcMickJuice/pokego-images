@@ -12,9 +12,8 @@ type PokemonWebServer struct {
 	addr string
 }
 
-func NewPokemonWebserver(addr string) PokemonWebServer {
+func NewPokemonWebServer(addr string) PokemonWebServer {
 	return PokemonWebServer{addr}
-
 }
 
 func (s PokemonWebServer) Start() error {

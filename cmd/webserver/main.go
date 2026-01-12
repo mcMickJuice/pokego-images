@@ -7,7 +7,7 @@ import (
 
 func main() {
 	addr := ":8000"
-	webserver := webserver.NewPokemonWebserver(addr)
+	webserver := webserver.NewPokemonWebServer(addr)
 	if err := webserver.Start(); err != nil {
 		log.Fatalf("error starting webserver: %v", err)
 	}
