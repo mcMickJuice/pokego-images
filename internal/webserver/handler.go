@@ -3,6 +3,7 @@ package webserver
 import (
 	"errors"
 	"fmt"
+	"log"
 	"mcmickjuice/pokego/internal/pokeimage"
 	"mcmickjuice/pokego/internal/pokemon"
 	"net/http"
@@ -38,11 +39,11 @@ func (s PokemonWebServer) Start() error {
 		w.WriteHeader(http.StatusOK)
 		err = pokeimage.NewPokemonImage(image).Write(w)
 		if err != nil {
-			fmt.Printf("error writing to response: %v", err)
+			log.Printf("error writing to response: %v", err)
 		}
 	})
 
-	fmt.Printf("webserver started at %s\n", s.addr)
+	log.Printf("webserver started at %s\n", s.addr)
 	err := http.ListenAndServe(s.addr, mux)
 	if err != nil {
 		return err
