@@ -19,13 +19,17 @@ func NewPokemonImage(img image.Image) *PokemonImage {
 	}
 }
 
-const R_FACTOR float32 = 0.299
-const G_FACTOR float32 = 0.587
-const B_FACTOR float32 = 0.114
+const (
+	rFactor       float32 = 0.299
+	gFactor       float32 = 0.587
+	bFactor       float32 = 0.114
+	asciiChars    string  = " `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@"
+	maxAsciiRange         = 65535
+)
 
 func toGrayscale(color color.Color) float32 {
 	r, g, b, _ := color.RGBA()
-	return float32(r)*R_FACTOR + float32(g)*G_FACTOR + float32(b)*B_FACTOR
+	return float32(r)*rFactor + float32(g)*gFactor + float32(b)*bFactor
 }
 
 func blankLine(line []byte) bool {
@@ -39,18 +43,14 @@ func blankLine(line []byte) bool {
 	return isBlankLine
 }
 
-const ASCII string = " `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@"
-
-const MAX = 65535
-
 // 256*256 - 1 - 0 - 65535
 func grayscaleToAscii(brightness float32) byte {
-	asciiLen := len(ASCII) - 1
-	unit := MAX / asciiLen
+	asciiLen := len(asciiChars) - 1
+	unit := maxAsciiRange / asciiLen
 	// my god...
 	index := brightness / float32(unit)
 	indexFloor := math.Floor(float64(index)) // no index out of range!
-	return (ASCII[int64(indexFloor)])
+	return (asciiChars[int64(indexFloor)])
 }
 
 func (pi PokemonImage) Write(w io.Writer) error {
