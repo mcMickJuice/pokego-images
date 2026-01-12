@@ -27,10 +27,11 @@ func CreateWebserver() error {
 			return
 		}
 
-		// should I return this as ascii art or convert to img that I stream back? Probably the latter as, to begin
-		// UI shouldn't need to format the ascii art
 		w.WriteHeader(http.StatusOK)
-		pokeimage.NewPokemonImage(image).Write(w)
+		err = pokeimage.NewPokemonImage(image).Write(w)
+		if err != nil {
+			fmt.Printf("error writing to response: %v", err)
+		}
 	})
 
 	err := http.ListenAndServe("localhost:8080", mux)
