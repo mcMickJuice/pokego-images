@@ -2,18 +2,10 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"mcmickjuice/pokego/internal/pokeimage"
 	"mcmickjuice/pokego/internal/pokemon"
+	"os"
 )
-
-type PrintWriter struct {
-}
-
-func (p PrintWriter) Write(input []byte) (int, error) {
-	fmt.Println(string(input))
-	return 0, nil
-}
 
 func main() {
 	pokemonPtr := flag.String("pokemon", "snorlax", "give a pokemon")
@@ -25,6 +17,5 @@ func main() {
 		panic(err)
 	}
 
-	pokeimage.NewPokemonImage(image).Write(PrintWriter{})
-
+	pokeimage.NewPokemonImage(image).Write(os.Stdout)
 }

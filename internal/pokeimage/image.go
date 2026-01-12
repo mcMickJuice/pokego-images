@@ -69,6 +69,8 @@ func (pi PokemonImage) Write(w io.Writer) {
 
 	for _, line := range slc {
 		if !blankLine(line) {
+			// append newline
+			line = append(line, '\n')
 			_, err := w.Write(line)
 			if err != nil {
 				fmt.Printf("error writing to writer: %v", err)
