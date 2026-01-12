@@ -54,8 +54,12 @@ func (pc PokemonClient) GetPokemonSprite() (image.Image, error) {
 func getPokemon(pokemonName string) (pokemonResponse, error) {
 	resp, err := http.Get(fmt.Sprintf(POKEMON_DETAIL_URL, pokemonName))
 
+	if resp.StatusCode != http.StatusOK {
+		return pokemonResponse{}, fmt.Errorf("failed to fetch pokemon: status code %v", resp.StatusCode)
+	}
+
 	if err != nil {
-		return pokemonResponse{}, err
+		return pokemonResponse{}, fmt.Errorf("unknown error fetching pokemon: %w", err)
 	}
 
 	defer func() {
@@ -68,8 +72,9 @@ func getPokemon(pokemonName string) (pokemonResponse, error) {
 
 	var pokemonResp pokemonResponse
 	if err := des.Decode(&pokemonResp); err != nil {
-		return pokemonResponse{}, err
+		return pokemonResponse{}, fmt.Errorf("failed to decode pokemon response: %w", err)
 	}
+	fmt.Printf("pokemonResp %v", pokemonResp)
 
 	return pokemonResp, nil
 }
