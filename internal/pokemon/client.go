@@ -79,9 +79,9 @@ func getPokemon(pokemonName string) (pokemonResponse, error) {
 	return pokemonResp, nil
 }
 
-func getPokemonSprite(pokemonSprintUrl string) (image.Image, error) {
+func getPokemonSprite(pokemonSpriteURL string) (image.Image, error) {
 
-	resp, err := http.Get(pokemonSprintUrl)
+	resp, err := http.Get(pokemonSpriteURL)
 	if err != nil {
 		return nil, err
 	}
