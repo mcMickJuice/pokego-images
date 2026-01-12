@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
-	"mcmickjuice/pokego/pokeimage"
-	"mcmickjuice/pokego/pokemon"
+	"mcmickjuice/pokego/internal/pokeimage"
+	"mcmickjuice/pokego/internal/pokemon"
 )
 
 // TODO implement multiple apps/clients:
