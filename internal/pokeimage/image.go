@@ -1,6 +1,7 @@
 package pokeimage
 
 import (
+	"bytes"
 	"fmt"
 	"image"
 	"image/color"
@@ -27,7 +28,7 @@ func toGrayscale(color color.Color) float32 {
 	return float32(r)*R_FACTOR + float32(g)*G_FACTOR + float32(b)*B_FACTOR
 }
 
-func blankLine(line string) bool {
+func blankLine(line []byte) bool {
 	isBlankLine := true
 	for _, char := range line {
 		if char != 32 {
@@ -38,36 +39,37 @@ func blankLine(line string) bool {
 	return isBlankLine
 }
 
-const ASCII = " `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@"
+const ASCII string = " `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@"
 
 const MAX = 65535
 
 // 256*256 - 1 - 0 - 65535
-func grayscaleToAscii(brightness float32) string {
+func grayscaleToAscii(brightness float32) byte {
 	asciiLen := len(ASCII) - 1
 	unit := MAX / asciiLen
 	// my god...
 	index := brightness / float32(unit)
 	indexFloor := math.Floor(float64(index)) // no index out of range!
-	return string(ASCII[int64(indexFloor)])
+	return (ASCII[int64(indexFloor)])
 }
 
 func (pi PokemonImage) Write(w io.Writer) {
 	maxBounds := pi.Bounds().Max.X
-	var slc = make([]string, maxBounds)
+	var slc = make([][]byte, maxBounds)
 
 	for r := 0; r < maxBounds; r++ {
+		var buf bytes.Buffer
 		for c := 0; c < maxBounds; c++ {
 			grayscale := toGrayscale(pi.At(c, r))
 			ascii := grayscaleToAscii(grayscale)
-			slc[r] += ascii
+			buf.WriteByte(ascii)
 		}
+		slc[r] = buf.Bytes()
 	}
 
-	// use bytes
 	for _, line := range slc {
 		if !blankLine(line) {
-			_, err := w.Write([]byte(line))
+			_, err := w.Write(line)
 			if err != nil {
 				fmt.Printf("error writing to writer: %v", err)
 				return
