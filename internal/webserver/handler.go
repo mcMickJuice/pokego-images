@@ -1,7 +1,6 @@
 package webserver
 
 import (
-	"fmt"
 	"mcmickjuice/pokego/internal/pokeimage"
 	"mcmickjuice/pokego/internal/pokemon"
 	"net/http"
@@ -11,7 +10,6 @@ func CreateWebserver() error {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/pokemon/{pokemon}", func(w http.ResponseWriter, r *http.Request) {
 		param := r.PathValue("pokemon")
-		fmt.Printf("pokemon param: %s", param)
 
 		pokemonClient := pokemon.NewPokemonClient(param)
 		image, err := pokemonClient.GetPokemonSprite()
@@ -23,11 +21,10 @@ func CreateWebserver() error {
 			return
 		}
 
-		asciiArt := pokeimage.NewPokemonImage(image).AsciiArt()
-		_, err = w.Write([]byte(asciiArt))
-		if err != nil {
-			fmt.Printf("error writing response: %v", err)
-		}
+		// should I return this as ascii art or convert to img that I stream back? Probably the latter as, to begin
+		// UI shouldn't need to format the ascii art
+		w.WriteHeader(http.StatusOK)
+		pokeimage.NewPokemonImage(image).Write(w)
 	})
 
 	err := http.ListenAndServe("localhost:8080", mux)
