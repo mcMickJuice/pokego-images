@@ -20,6 +20,6 @@ func main() {
 		panic(err)
 	}
 
-	pokeimage.NewPokemonImage(image).ToAsciiArt()
+	pokeimage.NewPokemonImage(image).PrintAsciiArt()
 
 }

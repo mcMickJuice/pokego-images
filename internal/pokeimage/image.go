@@ -51,7 +51,11 @@ func grayscaleToAscii(brightness float32) string {
 	return string(ASCII[int64(indexFloor)])
 }
 
-func (pi PokemonImage) ToAsciiArt() {
+func (pi PokemonImage) Read() {
+
+}
+
+func (pi PokemonImage) PrintAsciiArt() {
 
 	maxBounds := pi.Bounds().Max.X
 	var slc = make([]string, maxBounds)
