@@ -94,7 +94,6 @@ func getPokemonSprite(pokemonSprintUrl string) (image.Image, error) {
 
 	img, err := png.Decode(resp.Body)
 	if err != nil {
-		// wrap this to be specific that image decoding failed
 		return nil, fmt.Errorf("failed to decode pokemon sprite: %w", err)
 	}
 
