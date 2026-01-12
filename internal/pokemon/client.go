@@ -56,6 +56,10 @@ func (pc PokemonClient) GetPokemonSprite() (image.Image, error) {
 func getPokemon(pokemonName string) (pokemonResponse, error) {
 	resp, err := http.Get(fmt.Sprintf(POKEMON_DETAIL_URL, pokemonName))
 
+	if err != nil {
+		return pokemonResponse{}, fmt.Errorf("unknown error fetching pokemon: %w", err)
+	}
+
 	if resp.StatusCode == http.StatusNotFound {
 		return pokemonResponse{}, ErrPokemonNotFound
 	}
@@ -64,16 +68,7 @@ func getPokemon(pokemonName string) (pokemonResponse, error) {
 		return pokemonResponse{}, fmt.Errorf("failed to fetch pokemon: status code %v", resp.StatusCode)
 	}
 
-	if err != nil {
-		return pokemonResponse{}, fmt.Errorf("unknown error fetching pokemon: %w", err)
-	}
-
-	defer func() {
-		err := resp.Body.Close()
-		if err != nil {
-			fmt.Printf("failed to close response body: %v", err)
-		}
-	}()
+	defer resp.Body.Close()
 	des := json.NewDecoder(resp.Body)
 
 	var pokemonResp pokemonResponse
