@@ -20,11 +20,12 @@ func NewPokemonImage(img image.Image) *PokemonImage {
 }
 
 const (
-	rFactor       float32 = 0.299
-	gFactor       float32 = 0.587
-	bFactor       float32 = 0.114
-	asciiChars    string  = " `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@"
-	maxAsciiRange         = 65535
+	rFactor            float32 = 0.299
+	gFactor            float32 = 0.587
+	bFactor            float32 = 0.114
+	asciiChars         string  = " `.-':_,^=;><+!rc*/z?sLTv)J7(|Fi{C}fI31tlu[neoZ5Yxjya]2ESwqkP6h9d4VpOGbUAKXHm8RD#$Bg0MNWQ%&@"
+	maxAsciiRange              = 65535
+	asciiSpaceCharCode         = 32
 )
 
 func toGrayscale(color color.Color) float32 {
@@ -35,7 +36,7 @@ func toGrayscale(color color.Color) float32 {
 func blankLine(line []byte) bool {
 	isBlankLine := true
 	for _, char := range line {
-		if char != 32 {
+		if char != asciiSpaceCharCode {
 			isBlankLine = false
 			break
 		}
