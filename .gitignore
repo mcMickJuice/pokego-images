@@ -1,5 +1,5 @@
-# ignore binaries emitted by go, which have no extensions
-pokego
+# ignore binaries
+bin/
 
 # unignore anything with extensions
 # !*.*
