@@ -34,6 +34,8 @@ func NewPokemonClient(pokemonName string) *PokemonClient {
 	}
 }
 
+var ErrPokemonNotFound = fmt.Errorf("pokemon not found")
+
 func (pc PokemonClient) GetPokemonSprite() (image.Image, error) {
 
 	pokeResp, err := getPokemon(pc.pokemonName)
@@ -53,6 +55,10 @@ func (pc PokemonClient) GetPokemonSprite() (image.Image, error) {
 
 func getPokemon(pokemonName string) (pokemonResponse, error) {
 	resp, err := http.Get(fmt.Sprintf(POKEMON_DETAIL_URL, pokemonName))
+
+	if resp.StatusCode == http.StatusNotFound {
+		return pokemonResponse{}, ErrPokemonNotFound
+	}
 
 	if resp.StatusCode != http.StatusOK {
 		return pokemonResponse{}, fmt.Errorf("failed to fetch pokemon: status code %v", resp.StatusCode)
