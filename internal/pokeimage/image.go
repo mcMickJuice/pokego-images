@@ -69,7 +69,7 @@ func (pi PokemonImage) Write(w io.Writer) {
 
 	for _, line := range slc {
 		if !blankLine(line) {
-			// append newline
+			// append newline here instead of above soas not to break blaneLine logic
 			line = append(line, '\n')
 			_, err := w.Write(line)
 			if err != nil {
