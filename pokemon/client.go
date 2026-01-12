@@ -74,7 +74,6 @@ func getPokemon(pokemonName string) (pokemonResponse, error) {
 	if err := des.Decode(&pokemonResp); err != nil {
 		return pokemonResponse{}, fmt.Errorf("failed to decode pokemon response: %w", err)
 	}
-	fmt.Printf("pokemonResp %v", pokemonResp)
 
 	return pokemonResp, nil
 }
