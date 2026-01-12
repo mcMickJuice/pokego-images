@@ -29,7 +29,6 @@ type PokemonClient struct {
 }
 
 func NewPokemonClient(pokemonName string) *PokemonClient {
-
 	return &PokemonClient{
 		pokemonName: pokemonName,
 	}
