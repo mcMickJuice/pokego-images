@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	pokemonDetailUrl = "https://pokeapi.co/api/v2/pokemon/%s"
+	pokemonDetailURL = "https://pokeapi.co/api/v2/pokemon/%s"
 )
 
 type pokemonResponse struct {
@@ -55,7 +55,7 @@ func (pc PokemonClient) GetPokemonSprite() (image.Image, error) {
 }
 
 func getPokemon(pokemonName string) (pokemonResponse, error) {
-	resp, err := http.Get(fmt.Sprintf(pokemonDetailUrl, pokemonName))
+	resp, err := http.Get(fmt.Sprintf(pokemonDetailURL, pokemonName))
 
 	if err != nil {
 		return pokemonResponse{}, fmt.Errorf("unknown error fetching pokemon: %w", err)
