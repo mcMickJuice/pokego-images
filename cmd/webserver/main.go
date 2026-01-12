@@ -2,14 +2,13 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"mcmickjuice/pokego/internal/webserver"
 )
 
 func main() {
 	fmt.Println("starting webserver")
-	err := webserver.CreateWebserver()
-	if err != nil {
-		fmt.Printf("error starting webserver: %v", err)
+	if err := webserver.CreateWebserver(); err != nil {
+		log.Fatalf("error starting webserver: %v", err)
 	}
-	fmt.Println("exiting webserver")
 }
