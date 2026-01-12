@@ -18,5 +18,8 @@ func main() {
 		log.Fatalf("There was an error: %v", err)
 	}
 
-	pokeimage.NewPokemonImage(image).Write(os.Stdout)
+	err = pokeimage.NewPokemonImage(image).Write(os.Stdout)
+	if err != nil {
+		log.Printf("error writing output: %v", err)
+	}
 }
