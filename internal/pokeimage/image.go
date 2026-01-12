@@ -53,7 +53,7 @@ func grayscaleToAscii(brightness float32) byte {
 	return (ASCII[int64(indexFloor)])
 }
 
-func (pi PokemonImage) Write(w io.Writer) {
+func (pi PokemonImage) Write(w io.Writer) error {
 	maxBounds := pi.Bounds().Max.X
 	var slc = make([][]byte, maxBounds)
 
@@ -73,10 +73,10 @@ func (pi PokemonImage) Write(w io.Writer) {
 			line = append(line, '\n')
 			_, err := w.Write(line)
 			if err != nil {
-				fmt.Printf("error writing to writer: %v", err)
-				return
+				return fmt.Errorf("error writing to writer: %w", err)
 			}
 		}
 	}
+	return nil
 
 }
