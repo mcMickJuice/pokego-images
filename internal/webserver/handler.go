@@ -23,9 +23,8 @@ func CreateWebserver() error {
 			return
 		}
 
-		pokeimage.NewPokemonImage(image).PrintAsciiArt()
-		response := "hello"
-		_, err = w.Write([]byte(response))
+		asciiArt := pokeimage.NewPokemonImage(image).AsciiArt()
+		_, err = w.Write([]byte(asciiArt))
 		if err != nil {
 			fmt.Printf("error writing response: %v", err)
 		}

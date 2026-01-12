@@ -51,8 +51,28 @@ func grayscaleToAscii(brightness float32) string {
 	return string(ASCII[int64(indexFloor)])
 }
 
-func (pi PokemonImage) Read() {
+// use Reader interface
+func (pi PokemonImage) AsciiArt() string {
 
+	maxBounds := pi.Bounds().Max.X
+	var slc = make([]string, maxBounds)
+
+	for r := 0; r < maxBounds; r++ {
+		for c := 0; c < maxBounds; c++ {
+			grayscale := toGrayscale(pi.At(c, r))
+			ascii := grayscaleToAscii(grayscale)
+			slc[r] += ascii
+		}
+	}
+
+	// use string builder
+	str := ""
+	for _, line := range slc {
+		if !blankLine(line) {
+			str += line
+		}
+	}
+	return str
 }
 
 func (pi PokemonImage) PrintAsciiArt() {
