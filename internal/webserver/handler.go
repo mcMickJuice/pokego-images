@@ -36,7 +36,6 @@ func (s PokemonWebServer) Start() error {
 			return
 		}
 
-		w.WriteHeader(http.StatusOK)
 		err = pokeimage.NewPokemonImage(image).Write(w)
 		if err != nil {
 			log.Printf("error writing to response: %v", err)
