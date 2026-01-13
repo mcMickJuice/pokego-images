@@ -2,6 +2,6 @@
 build:
 	go build -o bin/ ./cmd/...
 
-webserver:
+webserver: build
 	./bin/webserver
 
