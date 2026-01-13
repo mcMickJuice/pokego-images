@@ -46,7 +46,10 @@ func blankLine(line []byte) bool {
 	return isBlankLine
 }
 
-// 256*256 - 1 - 0 - 65535
+// Go's color.Color.RGBA returns 16-bit channel values in the range [0, 65535]
+// (256*256 = 65536, so the maximum value is 65535). We treat this as the
+// maximum grayscale brightness (maxAsciiRange) and divide it into equal units
+// to map brightness to an index in asciiChars.
 func grayscaleToAscii(brightness float32) byte {
 	asciiLen := len(asciiChars) - 1
 	unit := maxAsciiRange / asciiLen
