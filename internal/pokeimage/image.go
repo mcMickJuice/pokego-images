@@ -33,6 +33,8 @@ func toGrayscale(color color.Color) float32 {
 	return float32(r)*rFactor + float32(g)*gFactor + float32(b)*bFactor
 }
 
+// a better implementation is to use bytes.TrimSpace(line) then check for length.
+// make this change after we have unit tests in place
 func blankLine(line []byte) bool {
 	isBlankLine := true
 	for _, char := range line {
@@ -58,6 +60,8 @@ func (pi PokemonImage) Write(w io.Writer) error {
 	maxBounds := pi.Bounds().Max.X
 	var slc = make([][]byte, maxBounds)
 
+	// this assumes images are square. for row count, use pi.Bounds().Max.Y
+	// make this change after we have unit tests in place
 	for r := 0; r < maxBounds; r++ {
 		var buf bytes.Buffer
 		for c := 0; c < maxBounds; c++ {
