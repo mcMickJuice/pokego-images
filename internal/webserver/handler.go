@@ -44,10 +44,5 @@ func (s PokemonWebServer) Start() error {
 	})
 
 	log.Printf("webserver started at %s\n", s.addr)
-	err := http.ListenAndServe(s.addr, mux)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return http.ListenAndServe(s.addr, mux)
 }
