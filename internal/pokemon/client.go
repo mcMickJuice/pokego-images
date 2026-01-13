@@ -8,8 +8,9 @@ import (
 	"net/http"
 )
 
-const ALL_POKEMON_URL = "https://pokeapi.co/api/v2/pokemon?limit=400"
-const POKEMON_DETAIL_URL = "https://pokeapi.co/api/v2/pokemon/%s"
+const (
+	pokemonDetailURL = "https://pokeapi.co/api/v2/pokemon/%s"
+)
 
 type pokemonResponse struct {
 	Name    string                 `json:"name"`
@@ -28,11 +29,12 @@ type PokemonClient struct {
 }
 
 func NewPokemonClient(pokemonName string) *PokemonClient {
-
 	return &PokemonClient{
 		pokemonName: pokemonName,
 	}
 }
+
+var ErrPokemonNotFound = fmt.Errorf("pokemon not found")
 
 func (pc PokemonClient) GetPokemonSprite() (image.Image, error) {
 
@@ -52,50 +54,42 @@ func (pc PokemonClient) GetPokemonSprite() (image.Image, error) {
 }
 
 func getPokemon(pokemonName string) (pokemonResponse, error) {
-	resp, err := http.Get(fmt.Sprintf(POKEMON_DETAIL_URL, pokemonName))
+	resp, err := http.Get(fmt.Sprintf(pokemonDetailURL, pokemonName))
+
+	if err != nil {
+		return pokemonResponse{}, fmt.Errorf("unknown error fetching pokemon: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusNotFound {
+		return pokemonResponse{}, ErrPokemonNotFound
+	}
 
 	if resp.StatusCode != http.StatusOK {
 		return pokemonResponse{}, fmt.Errorf("failed to fetch pokemon: status code %v", resp.StatusCode)
 	}
 
-	if err != nil {
-		return pokemonResponse{}, fmt.Errorf("unknown error fetching pokemon: %w", err)
-	}
-
-	defer func() {
-		err := resp.Body.Close()
-		if err != nil {
-			fmt.Printf("failed to close response body: %v", err)
-		}
-	}()
 	des := json.NewDecoder(resp.Body)
 
 	var pokemonResp pokemonResponse
 	if err := des.Decode(&pokemonResp); err != nil {
 		return pokemonResponse{}, fmt.Errorf("failed to decode pokemon response: %w", err)
 	}
-	fmt.Printf("pokemonResp %v", pokemonResp)
 
 	return pokemonResp, nil
 }
 
-func getPokemonSprite(pokemonSprintUrl string) (image.Image, error) {
+func getPokemonSprite(pokemonSpriteURL string) (image.Image, error) {
 
-	resp, err := http.Get(pokemonSprintUrl)
+	resp, err := http.Get(pokemonSpriteURL)
 	if err != nil {
 		return nil, err
 	}
 
-	defer func() {
-		err := resp.Body.Close()
-		if err != nil {
-			fmt.Printf("failed to close response body: %v", err)
-		}
-	}()
+	defer resp.Body.Close()
 
 	img, err := png.Decode(resp.Body)
 	if err != nil {
-		// wrap this to be specific that image decoding failed
 		return nil, fmt.Errorf("failed to decode pokemon sprite: %w", err)
 	}
 
