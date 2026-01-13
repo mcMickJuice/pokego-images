@@ -31,8 +31,9 @@ func (s PokemonWebServer) Start() error {
 				_, _ = fmt.Fprintf(w, "Pokemon %s Not Found", param)
 				return
 			}
+			log.Printf("error getting sprite for %s: %v", param, err)
 			w.WriteHeader(http.StatusInternalServerError)
-			_, _ = fmt.Fprint(w, "Unknown error")
+			_, _ = fmt.Fprint(w, "Internal server error occurred")
 			return
 		}
 
