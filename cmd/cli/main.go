@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"log"
-	"mcmickjuice/pokego/internal/pokeimage"
+	"mcmickjuice/pokego/internal/asciiimage"
 	"mcmickjuice/pokego/internal/pokemon"
 	"os"
 )
@@ -18,7 +18,7 @@ func main() {
 		log.Fatalf("There was an error: %v", err)
 	}
 
-	err = pokeimage.NewPokemonImage(image).Write(os.Stdout)
+	err = asciiimage.NewAsciiImage(image).Write(os.Stdout)
 	if err != nil {
 		log.Printf("error writing output: %v", err)
 	}

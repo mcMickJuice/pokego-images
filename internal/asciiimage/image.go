@@ -1,4 +1,4 @@
-package pokeimage
+package asciiimage
 
 import (
 	"bytes"
@@ -9,12 +9,13 @@ import (
 	"math"
 )
 
-type PokemonImage struct {
+// Convert images into ASCII representations of the image
+type AsciiImage struct {
 	image.Image
 }
 
-func NewPokemonImage(img image.Image) *PokemonImage {
-	return &PokemonImage{
+func NewAsciiImage(img image.Image) *AsciiImage {
+	return &AsciiImage{
 		Image: img,
 	}
 }
@@ -59,7 +60,7 @@ func grayscaleToAscii(brightness float32) byte {
 	return (asciiChars[int64(indexFloor)])
 }
 
-func (pi PokemonImage) Write(w io.Writer) error {
+func (pi AsciiImage) Write(w io.Writer) error {
 	maxBounds := pi.Bounds().Max.X
 	var slc = make([][]byte, maxBounds)
 

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"mcmickjuice/pokego/internal/pokeimage"
+	"mcmickjuice/pokego/internal/asciiimage"
 	"mcmickjuice/pokego/internal/pokemon"
 	"net/http"
 )
@@ -37,7 +37,7 @@ func (s PokemonWebServer) Start() error {
 			return
 		}
 
-		err = pokeimage.NewPokemonImage(image).Write(w)
+		err = asciiimage.NewAsciiImage(image).Write(w)
 		if err != nil {
 			log.Printf("error writing to response: %v", err)
 		}

@@ -24,6 +24,7 @@ type pokemonSpritesResponse struct {
 	FrontShiny  string `json:"front_shiny"`
 }
 
+// Use to fetch Pokémon data from the PokeAPI.
 type PokemonClient struct {
 	pokemonName string
 }
