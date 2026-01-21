@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	pokemonDetailURL = "https://pokeapi.co/api/v2/pokemon/%s"
+	pokemonDetailURL = "/api/v2/pokemon/%s"
 )
 
 type pokemonResponse struct {
@@ -26,17 +26,18 @@ type pokemonSpritesResponse struct {
 
 // Use to fetch Pokémon data from the PokeAPI.
 type PokemonClient struct {
+	pokeApiBaseURL string
 }
 
-func NewPokemonClient() *PokemonClient {
-	return &PokemonClient{}
+func NewPokemonClient(pokeApiBaseURL string) *PokemonClient {
+	return &PokemonClient{pokeApiBaseURL}
 }
 
 var ErrPokemonNotFound = fmt.Errorf("pokemon not found")
 
 func (pc PokemonClient) GetPokemonSprite(pokemonName string) (image.Image, error) {
 
-	pokeResp, err := getPokemon(pokemonName)
+	pokeResp, err := pc.getPokemon(pokemonName)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get pokemon details: %w", err)
@@ -51,8 +52,9 @@ func (pc PokemonClient) GetPokemonSprite(pokemonName string) (image.Image, error
 	return pokeSpriteResp, nil
 }
 
-func getPokemon(pokemonName string) (pokemonResponse, error) {
-	resp, err := http.Get(fmt.Sprintf(pokemonDetailURL, pokemonName))
+func (pc PokemonClient) getPokemon(pokemonName string) (pokemonResponse, error) {
+	url := pc.pokeApiBaseURL + pokemonDetailURL
+	resp, err := http.Get(fmt.Sprintf(url, pokemonName))
 
 	if err != nil {
 		return pokemonResponse{}, fmt.Errorf("unknown error fetching pokemon: %w", err)

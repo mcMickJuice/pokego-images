@@ -11,7 +11,7 @@ import (
 func main() {
 	pokemonPtr := flag.String("pokemon", "snorlax", "give a pokemon")
 	flag.Parse()
-	pokemonClient := pokemon.NewPokemonClient()
+	pokemonClient := pokemon.NewPokemonClient("https://pokeapi.co")
 	image, err := pokemonClient.GetPokemonSprite(*pokemonPtr)
 
 	if err != nil {

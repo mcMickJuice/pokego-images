@@ -22,7 +22,7 @@ func (s PokemonWebServer) Start() error {
 	mux.HandleFunc("/pokemon/{pokemon}", func(w http.ResponseWriter, r *http.Request) {
 		param := r.PathValue("pokemon")
 
-		pokemonClient := pokemon.NewPokemonClient()
+		pokemonClient := pokemon.NewPokemonClient("https://pokeapi.co")
 		image, err := pokemonClient.GetPokemonSprite(param)
 
 		if err != nil {
