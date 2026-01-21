@@ -26,20 +26,17 @@ type pokemonSpritesResponse struct {
 
 // Use to fetch Pokémon data from the PokeAPI.
 type PokemonClient struct {
-	pokemonName string
 }
 
-func NewPokemonClient(pokemonName string) *PokemonClient {
-	return &PokemonClient{
-		pokemonName: pokemonName,
-	}
+func NewPokemonClient() *PokemonClient {
+	return &PokemonClient{}
 }
 
 var ErrPokemonNotFound = fmt.Errorf("pokemon not found")
 
-func (pc PokemonClient) GetPokemonSprite() (image.Image, error) {
+func (pc PokemonClient) GetPokemonSprite(pokemonName string) (image.Image, error) {
 
-	pokeResp, err := getPokemon(pc.pokemonName)
+	pokeResp, err := getPokemon(pokemonName)
 
 	if err != nil {
 		return nil, fmt.Errorf("failed to get pokemon details: %w", err)

@@ -22,8 +22,8 @@ func (s PokemonWebServer) Start() error {
 	mux.HandleFunc("/pokemon/{pokemon}", func(w http.ResponseWriter, r *http.Request) {
 		param := r.PathValue("pokemon")
 
-		pokemonClient := pokemon.NewPokemonClient(param)
-		image, err := pokemonClient.GetPokemonSprite()
+		pokemonClient := pokemon.NewPokemonClient()
+		image, err := pokemonClient.GetPokemonSprite(param)
 
 		if err != nil {
 			if errors.Is(err, pokemon.ErrPokemonNotFound) {

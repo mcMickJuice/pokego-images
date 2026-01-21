@@ -11,8 +11,8 @@ import (
 func main() {
 	pokemonPtr := flag.String("pokemon", "snorlax", "give a pokemon")
 	flag.Parse()
-	pokemonClient := pokemon.NewPokemonClient(*pokemonPtr)
-	image, err := pokemonClient.GetPokemonSprite()
+	pokemonClient := pokemon.NewPokemonClient()
+	image, err := pokemonClient.GetPokemonSprite(*pokemonPtr)
 
 	if err != nil {
 		log.Fatalf("There was an error: %v", err)
