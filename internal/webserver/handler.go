@@ -1,6 +1,7 @@
 package webserver
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -10,20 +11,47 @@ import (
 )
 
 type PokemonWebServer struct {
-	addr string
+	addr          string
+	pokemonClient *pokemon.PokemonClient
 }
 
 func NewPokemonWebServer(addr string) PokemonWebServer {
-	return PokemonWebServer{addr}
+	return PokemonWebServer{addr, pokemon.NewPokemonClient("https://pokeapi.co")}
 }
 
 func (s PokemonWebServer) Start() error {
 	mux := http.NewServeMux()
+	mux.HandleFunc("/pokemon/all", func(w http.ResponseWriter, r *http.Request) {
+		resp, err := s.pokemonClient.GetPokemonList(r.Context())
+
+		fmt.Println("list has been received")
+		if err != nil {
+
+			if errors.Is(err, pokemon.ErrPokemonListNotFound) {
+
+				w.WriteHeader(http.StatusNotFound)
+				_, _ = fmt.Fprintf(w, "Pokemon List not Found")
+				return
+			}
+
+			log.Printf("error getting pokemon list: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = fmt.Fprintf(w, "Internal server error occurred")
+			return
+		}
+
+		fmt.Println("prepping responses")
+		encoder := json.NewEncoder(w)
+		if err := encoder.Encode(resp); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = fmt.Fprintf(w, "Internal server error occurred")
+		}
+
+	})
 	mux.HandleFunc("/pokemon/{pokemon}", func(w http.ResponseWriter, r *http.Request) {
 		param := r.PathValue("pokemon")
 
-		pokemonClient := pokemon.NewPokemonClient("https://pokeapi.co")
-		image, err := pokemonClient.GetPokemonSprite(param)
+		resp, err := s.pokemonClient.GetPokemon(r.Context(), param)
 
 		if err != nil {
 			if errors.Is(err, pokemon.ErrPokemonNotFound) {
@@ -34,6 +62,21 @@ func (s PokemonWebServer) Start() error {
 			log.Printf("error getting sprite for %s: %v", param, err)
 			w.WriteHeader(http.StatusInternalServerError)
 			_, _ = fmt.Fprint(w, "Internal server error occurred")
+			return
+		}
+
+		image, err := s.pokemonClient.GetPokemonSpriteImage(r.Context(), resp)
+
+		if err != nil {
+			if errors.Is(err, pokemon.ErrPokemonSpriteNotFound) {
+
+				w.WriteHeader(http.StatusNotFound)
+				_, _ = fmt.Fprintf(w, "Pokemon %s sprite not found", param)
+				return
+			}
+			log.Printf("error getting sprite for %s: %v", param, err)
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = fmt.Fprintf(w, "Internal server error occurred")
 			return
 		}
 

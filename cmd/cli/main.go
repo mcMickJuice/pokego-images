@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
 	"mcmickjuice/pokego/internal/asciiimage"
@@ -12,7 +13,14 @@ func main() {
 	pokemonPtr := flag.String("pokemon", "snorlax", "give a pokemon")
 	flag.Parse()
 	pokemonClient := pokemon.NewPokemonClient("https://pokeapi.co")
-	image, err := pokemonClient.GetPokemonSprite(*pokemonPtr)
+	ctx := context.Background()
+	resp, err := pokemonClient.GetPokemon(ctx, *pokemonPtr)
+
+	if err != nil {
+		log.Fatalf("There was an error: %v", err)
+	}
+
+	image, err := pokemonClient.GetPokemonSpriteImage(context.Background(), resp)
 
 	if err != nil {
 		log.Fatalf("There was an error: %v", err)
